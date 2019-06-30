@@ -1,0 +1,55 @@
+spring:
+  profiles: dev
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8769/uaa/.well-known/jwks.json
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: configserver
+      enabled: true 
+  zipkin:
+    discovery-client-enabled: true
+    service:
+      name: zipkin-server 
+  boot:
+    admin:
+      client:
+        username: "user"       #These two are needed so that the client
+        password: "password"   #can register at the protected server api
+        url:
+        - ${ADMIN_SERVER_URL:http://localhost:9090/}
+  data:
+    neo4j:
+      uri: bolt://localhost
+      username: neo4j
+      password: pass123
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+
+# Logging
+logging:
+  pattern:
+    console: "[%-5level] %date{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %logger{15}#%line %msg\n"
+  level:
+    root: DEBUG
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: DEBUG
+    redis.client: DEBUG
+    com.training.mjunction.usersvcs: ERROR
+    org.springframework: ERROR
+    org.hibernate: ERROR
+    sun.rmi: ERROR
+    org.reflections: ERROR
+    sun.reflect: ERROR
+    org.apache: ERROR
+    org.apache.coyote.http11: ERROR
+    org.glassfish.jersey.internal.util: ERROR
+    org.apache.tomcat.util.descriptor: ERROR
+    org.apache.catalina.core: ERROR

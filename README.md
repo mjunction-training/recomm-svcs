@@ -1,1 +1,3 @@
-# recomm-svcs
+# review-svcs
+Product Review Service
+        
