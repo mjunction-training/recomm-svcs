@@ -47,3 +47,4 @@ CREATE
  (Classmate)-[:RECOMMENDS]->(BallPen),
  (Classmate)-[:RECOMMENDS]->(DomsCrans)
 ;
+        
