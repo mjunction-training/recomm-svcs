@@ -27,6 +27,14 @@ spring:
       uri: bolt://localhost
       username: neo4j
       password: pass123
+  rabbitmq:
+    virtual-host: micro-vh
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+    queue:
+       name: q.dev.prod.recomm
 
 eureka:
   client:

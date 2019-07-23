@@ -10,6 +10,9 @@ import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,20 +20,26 @@ import lombok.NoArgsConstructor;
 @Data()
 @NoArgsConstructor
 @NodeEntity
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({ "id", "name", "productId", "products" })
 public class Product {
 
 	@Id
 	@GeneratedValue
+	@JsonProperty("id")
 	private Long id;
 
 	@Property("name")
 	@Index(unique = true)
+	@JsonProperty("name")
 	private String name;
 
 	@Property("productId")
 	@Index(unique = true)
+	@JsonProperty("productId")
 	private String productId;
 
+	@JsonProperty("products")
 	@JsonIgnoreProperties("products")
 	@Relationship(type = "RECOMMENDS", direction = Relationship.OUTGOING)
 	private List<Product> products;

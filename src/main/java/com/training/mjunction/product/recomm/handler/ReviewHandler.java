@@ -2,11 +2,18 @@ package com.training.mjunction.product.recomm.handler;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.web.reactive.function.BodyInserters.fromObject;
+import static org.springframework.web.reactive.function.server.ServerResponse.notFound;
+import static org.springframework.web.reactive.function.server.ServerResponse.ok;
+import static org.springframework.web.reactive.function.server.ServerResponse.status;
+import static reactor.core.publisher.Flux.fromIterable;
+import static reactor.core.publisher.Mono.fromSupplier;
+
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
@@ -14,7 +21,6 @@ import com.training.mjunction.product.recomm.data.nodes.Product;
 import com.training.mjunction.product.recomm.data.repository.ProductRepository;
 
 import lombok.extern.log4j.Log4j2;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -33,14 +39,31 @@ public class ReviewHandler {
 
 		if (isNotBlank(productId)) {
 
-			// fetch product from repository by product id, build response
-			return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-					.body(Flux.fromIterable(productRepository.findByProductId(productId, 500)), Product.class);
+			// fetch product from repository by product id
+			final List<Product> products = productRepository.findByProductId(productId, 500);
+
+			if (null == products || products.isEmpty()) {
+
+				// build not found response
+				return notFound().build();
+
+			}
+
+			for (final Product product : products) {
+
+				if (product.getProductId().equals(productId)) {
+
+					// build and return response
+					return ok().contentType(APPLICATION_JSON).body(fromSupplier(() -> product), Product.class);
+
+				}
+
+			}
 
 		}
 
 		// build not found response
-		return ServerResponse.notFound().build();
+		return notFound().build();
 
 	}
 
@@ -53,22 +76,21 @@ public class ReviewHandler {
 
 		if (isBlank(productName)) {
 
-			// fetch all products from repository
-			return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-					.body(Flux.fromIterable(productRepository.findAll()), Product.class);
+			// fetch all products from repository, build response
+			return ok().contentType(APPLICATION_JSON).body(fromIterable(productRepository.findAll()), Product.class);
 
 		}
 
 		if (isNotBlank(productName)) {
 
 			// fetch product from repository by product name, build response
-			return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-					.body(Flux.fromIterable(productRepository.findByProductName(productName, 500)), Product.class);
+			return ok().contentType(APPLICATION_JSON)
+					.body(fromIterable(productRepository.findByProductName(productName, 500)), Product.class);
 
 		}
 
 		// build not found response
-		return ServerResponse.notFound().build();
+		return notFound().build();
 
 	}
 
@@ -78,8 +100,11 @@ public class ReviewHandler {
 
 		final Mono<Product> monoProduct = request.bodyToMono(Product.class);
 
-		return ServerResponse.status(201)
-				.build(monoProduct.flatMap(p -> Mono.fromSupplier(() -> productRepository.save(p))).then());
+		// save product
+		final Mono<Product> responseMono = monoProduct.doOnNext(productRepository::save);
+
+		// build response
+		return responseMono.flatMap(product -> status(201).contentType(APPLICATION_JSON).body(fromObject(product)));
 
 	}
 
@@ -99,8 +124,7 @@ public class ReviewHandler {
 		final Mono<Product> responseMono = monoProduct.doOnNext(productRepository::save);
 
 		// build response
-		return responseMono.flatMap(product -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-				.body(BodyInserters.fromObject(product)));
+		return responseMono.flatMap(product -> ok().contentType(APPLICATION_JSON).body(fromObject(product)));
 
 	}
 
@@ -111,14 +135,36 @@ public class ReviewHandler {
 		// parse id from path-variable
 		final String productId = request.pathVariable("productId");
 
-		productRepository.deleteByProductId(productId);
+		if (isNotBlank(productId)) {
 
-		// get product from repository
-		final Mono<String> responseMono = Mono.just("Deleted Succesfully!");
+			// fetch product from repository by product id
+			final List<Product> products = productRepository.findByProductId(productId, 500);
 
-		// build response
-		return responseMono.flatMap(strMono -> ServerResponse.accepted().contentType(MediaType.TEXT_PLAIN)
-				.body(BodyInserters.fromObject(strMono)));
+			if (null == products || products.isEmpty()) {
+
+				// build not found response
+				return notFound().build();
+
+			}
+
+			for (final Product product : products) {
+
+				if (product.getProductId().equals(productId)) {
+
+					// Delete the product
+					productRepository.deleteByProductId(productId);
+
+					// build and return response
+					return status(202).contentType(APPLICATION_JSON).body(fromSupplier(() -> product), Product.class);
+
+				}
+
+			}
+
+		}
+
+		// build not found response
+		return notFound().build();
 
 	}
 
